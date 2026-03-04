@@ -1,0 +1,31 @@
+# Personal information
+.personal/
+
+# Generated reports
+output/
+
+# Environment variables (contains API keys)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+
+# Ruff
+.ruff_cache/

@@ -1,0 +1,53 @@
+[project]
+name = "tailr"
+version = "0.1.0"
+description = "AI-powered fit analysis tool"
+readme = "README.md"
+license = "MIT"
+requires-python = "==3.13.*"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+]
+dependencies = [
+    "httpx>=0.27.0",
+    "langchain-core>=1.2.11",
+    "langchain-openai>=1.1.0",
+    "langchain-google-genai>=4.2.0",
+    "pydantic>=2.12.0",
+    "typer>=0.21.0",
+    "rich>=14.0.0",
+]
+
+[project.scripts]
+tailr = "tailr.cli.main:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.6.0",
+    "mypy>=1.11.0",
+]
+
+[project.urls]
+Repository = "https://github.com/YOUR_USERNAME/Tailr"
+Issues = "https://github.com/YOUR_USERNAME/Tailr/issues"
+
+[build-system]
+requires = ["uv_build>=0.5.0"]
+build-backend = "uv_build"
+
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
