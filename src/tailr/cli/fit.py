@@ -10,7 +10,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from tailr import report
-from tailr.analyzer import FitAnalyzer, FitAnalysis, ModelNotFoundError
+from tailr.analyzer import FitAnalysis, FitAnalyzer, ModelNotFoundError
 from tailr.providers import Provider
 
 LLM_API_KEY_ENV = "LLM_API_KEY"
