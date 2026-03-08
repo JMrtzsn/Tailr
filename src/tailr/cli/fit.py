@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from tailr import report
+from tailr import report, scrubber
 from tailr.analyzer import FitAnalysis, FitAnalyzer, ModelNotFoundError
 from tailr.providers import Provider
 
@@ -121,6 +121,10 @@ def fit(
     max_tokens: Annotated[
         int | None, typer.Option("--max-tokens", help="Maximum output tokens", min=1)
     ] = None,
+    no_scrub: Annotated[
+        bool,
+        typer.Option("--no-scrub", help="Disable PII scrubbing of the CV before analysis"),
+    ] = False,
 ) -> None:
     """Evaluate a CV against a job description and generate a fit report."""
     if ctx.invoked_subcommand is not None:
@@ -139,6 +143,10 @@ def fit(
 
     cv_content = _load_file(cv, "CV")
     job_content = _load_file(job, "Job")
+
+    if not no_scrub:
+        console.print("🔒 Scrubbing PII from CV...")
+        cv_content = scrubber.scrub(cv_content)
 
     console.print("🔧 Initialising LLM...")
     console.print("📊 Running fit analysis...")

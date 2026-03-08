@@ -44,6 +44,7 @@ tailr fit --cv path/to/cv.md --job path/to/job.txt
 | `--api-key`     | `-k`  | API key (overrides env var) | —                                  |
 | `--temperature` | `-t`  | Temperature (0.0–2.0)       | `0.7`                              |
 | `--max-tokens`  |       | Max output tokens           | `4000`                             |
+| `--no-scrub`    |       | Disable PII scrubbing       | scrubbing enabled                  |
 
 ### Examples
 
@@ -60,6 +61,21 @@ Markdown report saved to the output directory (e.g. `fit-backend-engineer.md`).
 Contents: fit score (0–100%), verdict (`STRONG FIT`/`POSSIBLE FIT`/`WEAK FIT`),
 proof points, risk flags (credibility concerns, not missing keywords), growth
 opportunities, interview focus areas, and gap strategies.
+
+## Privacy
+
+By default, Tailr scrubs personal identifiable information (PII) from the CV
+before sending it to the LLM. The following are replaced with placeholders:
+
+- **Name** — detected from the first line of the CV
+- **Email addresses**
+- **Phone numbers** (international formats)
+- **LinkedIn URLs**
+- **GitHub URLs**
+- **Other URLs** (portfolios, personal sites)
+- **Street addresses**
+
+To disable scrubbing, pass `--no-scrub`.
 
 ## Development
 
