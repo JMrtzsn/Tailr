@@ -174,6 +174,9 @@ class FitAnalyzer:
         self.provider = provider
         self.api_key = api_key
         self.model = model
+        # TODO(hallucination-mitigation): POC minimises temperature and uses strict system
+        #   prompts. Production requires automated evaluation frameworks (e.g. LangSmith,
+        #   RAGAS) to continuously score output accuracy against a ground-truth dataset.
         self.temperature = temperature
         self.max_tokens = max_tokens
 
@@ -181,6 +184,9 @@ class FitAnalyzer:
 
     def analyze(self, cv: str, job_description: str) -> FitAnalysis:
         """Run a fit analysis and return the structured result."""
+        # TODO(prompt-engineering): POC uses a basic sequential LangChain chain.
+        #   Production should migrate to LangGraph to build cyclic, agentic
+        #   workflows capable of self-correction when data extraction fails.
         chat_model = self._create_chat_model()
         chain = _FIT_PROMPT | chat_model.with_structured_output(FitAnalysis)
 
@@ -208,6 +214,9 @@ class FitAnalyzer:
 
     def _create_chat_model(self) -> BaseChatModel:
         """Instantiate the appropriate LangChain chat model."""
+        # TODO(token-limits): POC relies on the default context window of the model.
+        #   To scale, implement document chunking and a vector database (e.g. ChromaDB,
+        #   Pinecone) for Retrieval-Augmented Generation (RAG).
         match self.provider:
             case Provider.OPENAI:
                 return ChatOpenAI(
