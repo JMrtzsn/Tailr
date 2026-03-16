@@ -13,33 +13,50 @@ from pydantic import BaseModel, Field, SecretStr
 from tailr.providers import Provider, list_gemini_models, list_openai_models
 
 _FIT_SYSTEM_PROMPT = """\
-You are a career-fit analyst.
+You are a career-fit analyst. Your job is to produce an honest, calibrated
+assessment of how well a candidate's CV matches a job description.
+Optimise for accuracy first, then clarity and actionable interview prep.
+A hiring manager will use this report — overconfident scores damage credibility.
 
-Your job is to read a candidate's CV and a job description, then produce an honest,
-evidence-based assessment of role readiness and the candidate's *fit strength*.
-Optimise for clarity, credibility, and actionable interview prep.
+TWO DISTINCT CONCERNS — keep them separate:
 
-IMPORTANT — this is NOT an ATS keyword checker. Do NOT penalise the candidate
-for missing technologies they have never claimed to know. Instead:
-- Proof points highlight what the candidate clearly brings to the table.
-- Risk flags highlight credibility concerns *within* the CV itself:
-  vague claims, unclear scope/ownership, inflated language, missing metrics,
-  time-gaps, or areas where the CV is ambiguous about depth vs. exposure.
-  They should NEVER be a wishlist of job-description keywords absent from the CV.
+1. CV CREDIBILITY RISKS (gaps in the CV itself):
+   Vague claims, unclear scope/ownership, inflated language, missing metrics,
+   time-gaps, ambiguous depth vs. exposure, unsupported seniority signals.
+
+2. ROLE FIT GAPS (genuine mismatch between candidate and role):
+   Core language/framework misalignment, missing domain experience, absent
+   must-have skills the job description lists as primary requirements.
+   These ARE valid gap signals — they must influence the score.
+
+   Distinguish: ATS keyword-matching (bad) vs. stack alignment (necessary).
+   - BAD:  "CV doesn't mention Kubernetes" when the JD only briefly lists it.
+   - GOOD: "CV shows Go as primary language; role's primary stack is TypeScript/NestJS."
+   - GOOD: "AI experience is personal-project level; role requires production integration."
+   - GOOD: "No React experience; role explicitly requires frontend React work."
 
 CORE PRINCIPLES:
 - Be specific and grounded in what the CV actually says.
-- Prefer evidence of impact and ownership over buzzwords.
-- Don't infer facts that aren't stated.
-- Keep every bullet crisp, plain-language, and useful to a human reader.
+- Do NOT infer facts that are not stated. "Familiarity likely" is not evidence.
+- Do NOT round up. If the primary stack is a partial match, score it as such.
+- Keep every bullet crisp, plain-language, and directly useful.
 - Do NOT quote the CV back verbatim. Summarise the signal in your own words.
 
 ROLE READINESS SCORE (0–100): "career signal score"
 Weight the score using this rubric:
-- 40% Role primitives: core skills/tools + job fundamentals.
+- 40% Role primitives: primary language/framework alignment + job fundamentals.
+  If the candidate's dominant language differs from the role's primary stack,
+  this bucket must reflect that gap — do NOT assume transferability.
 - 30% Impact evidence: outcomes, scope, complexity, ownership.
 - 20% Execution maturity: collaboration, leadership, reliability, decision making.
 - 10% Narrative quality: clarity, focus, progression, credibility.
+
+CALIBRATION GUARD: Before assigning a score above 80, confirm:
+  (a) The candidate demonstrably works in the role's primary language/framework.
+  (b) The candidate has production (not just personal-project) evidence for
+      any skill the JD lists as a primary requirement.
+  (c) No critical must-have from the JD is absent from the CV.
+  If any of (a–c) fails, cap the score at 79.
 
 VERDICT CRITERIA (keep these exact labels):
 - STRONG FIT: 65%+ and no material blockers; strong evidence of readiness.
@@ -65,13 +82,17 @@ Output requirements — follow these carefully:
   Good: "8+ years building distributed backend systems, most recently at IKEA."
   Bad:  "Experience — Evidence: 'Senior Backend Engineer with 8+ years…'"
 
-- gaps (3–8 bullets): Credibility risks or weak spots *in the CV itself*.
-  Examples of good risk flags:
-    • "Observability experience is mentioned but scope/scale is unclear."
-    • "Claims 'led' a migration but no detail on team size or decision ownership."
-    • "No measurable outcomes listed for the most recent role."
-  Do NOT list job-description requirements the CV doesn't mention — that is the
-  old ATS approach and we explicitly do not want it.
+- gaps (3–8 bullets): Two types of gap, both valid — combine them:
+  (A) CV credibility risks: vague claims, unclear ownership, missing metrics, inflated language.
+      Examples:
+        • "Observability experience is mentioned but scope/scale is unclear."
+        • "Claims 'led' a migration but no detail on team size or decision ownership."
+  (B) Role fit gaps: genuine mismatch on core requirements from the JD.
+      Examples:
+        • "Primary language in CV is Go; role's primary stack is TypeScript/NestJS."
+        • "AI experience is personal-project level; role requires production integration."
+        • "No React experience visible; role explicitly lists frontend React work."
+  Do NOT flag every missing JD keyword — focus on the *core* requirements only.
 
 - recommendation_reason: 3–6 sentences explaining the verdict.
 
@@ -120,8 +141,9 @@ class FitAnalysis(BaseModel):
     gaps: list[str] = Field(
         default_factory=list,
         description=(
-            "Credibility risks in the CV: vague claims, unclear scope, missing metrics, "
-            "ambiguous depth. NOT a list of missing job-description keywords."
+            "Two types, both valid: (A) CV credibility risks — vague claims, unclear scope, "
+            "missing metrics, ambiguous depth; (B) core role fit gaps — primary stack mismatch, "
+            "missing domain, absent must-have production experience."
         ),
     )
     knowledge_gains: list[str] = Field(
@@ -168,7 +190,7 @@ class FitAnalyzer:
         provider: Provider,
         api_key: str,
         model: str,
-        temperature: float = 0.7,
+        temperature: float = 0.2,
         max_tokens: int = 8_000,
     ) -> None:
         self.provider = provider
